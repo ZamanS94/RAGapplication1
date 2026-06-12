@@ -6,10 +6,17 @@ class RAGRetriever:
         self.vectorstore = vectorstore
         self.embedder = embedder
 
-    def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    def retrieve(
+        self,
+        query: str,
+        top_k: int = 5,
+        score_threshold: float = 0.0
+    ) -> List[Dict[str, Any]]:
 
+        # embed query
         q_emb = self.embedder.embed([query])[0]
 
+        # vector search
         results = self.vectorstore.collection.query(
             query_embeddings=[q_emb.tolist()],
             n_results=top_k,
@@ -17,13 +24,18 @@ class RAGRetriever:
 
         docs = []
 
-        if results["documents"]:
+        if results.get("documents"):
             for i in range(len(results["documents"][0])):
-                docs.append(
-                    {
+
+                score = 1 - results["distances"][0][i]  # convert distance → similarity
+
+                # apply threshold filter
+                if score >= score_threshold:
+                    docs.append({
                         "content": results["documents"][0][i],
-                        "score": 1 - results["distances"][0][i],
-                    }
-                )
+                        "score": score,
+                    })
+
+        docs.sort(key=lambda x: x["score"], reverse=True)
 
         return docs

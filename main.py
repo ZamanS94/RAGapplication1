@@ -4,21 +4,7 @@ from scripts.embeddings import EmbeddingManager
 from scripts.vectorstore import VectorStore
 from scripts.retriever import RAGRetriever
 from scripts.llm import OpenAILLM
-
-
-def run_rag(retriever, llm, query: str, top_k: int = 5):
-
-    docs = retriever.retrieve(query, top_k)
-
-    context = "\n\n".join([d["content"] for d in docs])
-
-    answer = llm.generate(query, context)
-
-    return {
-        "query": query,
-        "context": docs,
-        "answer": answer,
-    }
+from scripts.runRAG import rag_simple, rag_advanced 
 
 def main():
 
@@ -43,9 +29,16 @@ def main():
 
     # query
     query = "What is sales projection?"
-    result = run_rag(retriever, llm, query)
 
-    print("\nANSWER:\n", result["answer"])
+    #result = rag_simple(retriever, llm, query)
+    #print("\nANSWER:\n", result["answer"])
+
+    
+    result = rag_advanced("Hard Negative Mining Technqiues", retriever, llm, top_k=3, min_score=0.1, return_context=True)
+    print("Answer:", result['answer'])
+    print("Sources:", result['sources'])
+    print("Confidence:", result['confidence'])
+    print("Context Preview:", result['context'][:300])
 
 
 if __name__ == "__main__":
